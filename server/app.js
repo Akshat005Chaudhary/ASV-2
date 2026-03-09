@@ -2,12 +2,14 @@ const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
-const Web3 = require("web3");
+const Web3 = require("web3").default;
 const nodemailer = require("nodemailer");
+require("dotenv").config();
 
 const app = express();
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
+
 
 const universities = require("./universityAccounts.json");
 
@@ -27,7 +29,7 @@ const otpStore = new Map();
 function getUniversityEmail(wallet) {
 
   const uni = universities.find(
-    u => u.wallet.toLowerCase() === wallet.toLowerCase()
+    u => u.wallet === wallet
   );
 
   return uni ? uni.email : null;
@@ -35,12 +37,10 @@ function getUniversityEmail(wallet) {
 }
 
 const transporter = nodemailer.createTransport({
-  secure: true,
-  host: 'smtp.gmail.com',
-  port: 465,
+  service: 'gmail',
   auth:{
-    user: 'chaudharyakshat555@gmail.com',
-    pass: 'fjnb frvs kram epan'
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
 });
 
@@ -50,7 +50,7 @@ const transporter = nodemailer.createTransport({
 
 app.post("/iam/check", async (req, res) => {
 
-  const { issuerWallet } = req.body;
+  const issuerWallet = req.body.issuerWallet;
 
   const isRegistered = await contract.methods
     .isRegisteredUniversity(issuerWallet)
@@ -76,7 +76,7 @@ app.post("/iam/check", async (req, res) => {
 
 app.post("/mfa/request", async (req, res) => {
 
-  const { issuerWallet } = req.body;
+  const issuerWallet = req.body.issuerWallet;
 
   const isRegistered = await contract.methods
     .isRegisteredUniversity(issuerWallet)
@@ -141,7 +141,8 @@ try {
 
 app.post("/mfa/verify", (req, res) => {
 
-  const { issuerWallet, otp } = req.body;
+  const issuerWallet = req.body.issuerWallet;
+  const otp = req.body.otp;
 
   const record = otpStore.get(issuerWallet);
 
@@ -161,7 +162,7 @@ app.post("/mfa/verify", (req, res) => {
 
   const authJWT = jwt.sign(
     { issuerWallet },
-    "superSecretKey",
+    process.env.JWT_SECRET,
     { expiresIn: "10m" }
   );
 
@@ -198,7 +199,7 @@ app.post("/certificate/issue", async (req, res) => {
 
     try {
 
-      decoded = jwt.verify(token, "superSecretKey");
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     } catch (err) {
 
@@ -221,7 +222,7 @@ app.post("/certificate/issue", async (req, res) => {
       signature
     } = req.body;
 
-    if (jwtIssuer.toLowerCase() !== issuerWallet.toLowerCase())
+    if (jwtIssuer !== issuerWallet)
       return res.status(403).send("JWT issuer mismatch");
 
     /* =========================
@@ -246,7 +247,7 @@ app.post("/certificate/issue", async (req, res) => {
       signature
     );
 
-    if (recoveredWallet.toLowerCase() !== issuerWallet.toLowerCase())
+    if (recoveredWallet !== issuerWallet)
       return res.status(403).send("Invalid signature");
 
     /* =========================
@@ -254,8 +255,8 @@ app.post("/certificate/issue", async (req, res) => {
     ========================= */
 
     const receipt = await contract.methods
-      .registerCertificate(payloadHash, cid, studentWallet)
-      .send({ from: issuerWallet });
+      .registerCertificate(payloadHash, cid, studentWallet, timestamp)
+      .send({ from: issuerWallet, gas: 300000 });
 
     res.json({
       message: "Certificate registered successfully",
@@ -281,17 +282,21 @@ app.get("/studentCertificates/:walletAddress", async (req, res) => {
 
   try {
 
-    const walletAddress = req.params.walletAddress.toLowerCase();
+    const walletAddress = req.params.walletAddress;
 
     console.log("Querying certificates for wallet:", walletAddress);
 
     const total = await contract.methods.totalCertificates().call();
 
+    console.log("Total certificates:", total);    // Temporary check
+
+    
     const certificates = [];
-
+    
     for (let i = 0; i < total; i++) {
-
+      
       const cert = await contract.methods.getCertificate(i).call();
+      console.log("Cert from blockchain:", cert);   // Temporary check
 
       const certObj = {
         payloadHash: cert[0],
@@ -301,7 +306,7 @@ app.get("/studentCertificates/:walletAddress", async (req, res) => {
         timestamp: cert[4]
       };
 
-      if (certObj.student.toLowerCase() === walletAddress) {
+      if (certObj.student === walletAddress) {
         certificates.push(certObj);
       }
 
@@ -313,6 +318,7 @@ app.get("/studentCertificates/:walletAddress", async (req, res) => {
         timestamp: cert.timestamp.toString(),
       };
     });
+    console.log("Length of certificates:", serializedCertificates.length);
     res.send(serializedCertificates);
 
   } catch (error) {
@@ -373,8 +379,8 @@ app.post("/verifyCertificate", async (req, res) => {
     ============================= */
 
     if (
-      cert.student.toLowerCase() !== studentWallet.toLowerCase() ||
-      cert.cid !== cid ||
+      cert.student !== studentWallet ||
+      cert.cid.trim() !== cid.trim() ||
       cert.issuedAt.toString() !== timestamp.toString()
     ) {
 

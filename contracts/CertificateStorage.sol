@@ -21,7 +21,7 @@ contract CertificateStorage {
         isRegisteredUniversity[0xAeB5Dc5d5DbfdF3E9291C942cF4431844d902BeD] = true;
     }
 
-    function registerCertificate(bytes32 payloadHash, string memory cid, address student) public {
+    function registerCertificate(bytes32 payloadHash, string memory cid, address student, uint256 issuedAt) public {
 
         require(isRegisteredUniversity[msg.sender], "Not a registered university");
 
@@ -30,7 +30,7 @@ contract CertificateStorage {
             cid: cid,
             student: student,
             issuer: msg.sender,
-            issuedAt: block.timestamp
+            issuedAt: issuedAt
         });
 
         certificateHashes.push(payloadHash);
@@ -42,10 +42,13 @@ contract CertificateStorage {
 
     function getCertificate(uint index) public view returns (
         bytes32 payloadHash,
+        string memory cid,
         address student,
         address issuer,
         uint256 issuedAt
     ) {
+
+        require(index < certificateHashes.length, "Invalid index");
 
         bytes32 hash = certificateHashes[index];
 
@@ -53,6 +56,7 @@ contract CertificateStorage {
 
         return (
             cert.payloadHash,
+            cert.cid,
             cert.student,
             cert.issuer,
             cert.issuedAt

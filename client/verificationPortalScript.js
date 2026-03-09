@@ -42,6 +42,7 @@ async function verifyCertificate() {
       return;
     }
 
+
     resultDiv.innerHTML = `
       <h3 style="color:green;">Certificate Verified ✔</h3>
       <strong>Issued To:</strong> ${result.student}<br>

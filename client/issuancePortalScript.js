@@ -22,7 +22,7 @@ async function connectWallet() {
   const contractJson = await fetch("../build/contracts/CertificateStorage.json")
     .then(res => res.json());
 
-  const contractAddress = "YOUR_DEPLOYED_CONTRACT_ADDRESS";
+  const contractAddress = "0x161c312E4007669d7457ed5345950483E59B1a37";
 
   contract = new web3.eth.Contract(contractJson.abi, contractAddress);
 
@@ -149,8 +149,13 @@ async function uploadToIPFS(file) {
 
 async function uploadCert() {
 
+  if (!authJWT) {
+    alert("Please complete authentication first.");
+    return;
+  }
+
   const file = document.getElementById("certFile").files[0];
-  const studentWallet = document.getElementById("studentWallet").value;
+  const studentWallet = document.getElementById("studentWallet").value.trim();
 
   if (!file || !studentWallet) {
     alert("Please select a file and enter student wallet address.");
@@ -187,7 +192,8 @@ async function uploadCert() {
 
     const signature = await web3.eth.personal.sign(
       payloadHash,
-      universityAccount
+      universityAccount,
+      ""
     );
 
     console.log("Signature:", signature);
