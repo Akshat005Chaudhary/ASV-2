@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Certificate Portal</title>
+  </head>
+
+  <body>
+    <h2>Student Certificate Portal</h2>
+
+    <label for="studentWallet">Student Wallet Address</label>
+    <input
+      type="text"
+      id="studentWallet"
+      placeholder="Enter Student Wallet Address"
+    />
+
+    <button onclick="fetchCertificates()">Fetch Certificates</button>
+
+    <hr />
+
+    <div id="certificatesDisplayResult"></div>
+
+    <script src="studentPortalScript.js"></script>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Issuance Portal</title>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.7.4/dist/web3.min.js"></script>
+    <!-- Browser <script> tag -->
+    <script src="https://unpkg.com/kubo-rpc-client/dist/index.min.js"></script>
+  </head>
+  <body>
+    <button onclick="connectWallet()">Connect MetaMask</button>
+    <input type="file" id="certFile" />
+    <input type="text" id="studentWallet" placeholder="Student Wallet" />
+    <button onclick="uploadCert()">Upload Certificate</button>
+    <script src="issuancePortalScript.js"></script>
+  </body>
+</html>
