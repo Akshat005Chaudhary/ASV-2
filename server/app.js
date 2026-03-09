@@ -254,7 +254,7 @@ app.post("/certificate/issue", async (req, res) => {
     ========================= */
 
     const receipt = await contract.methods
-      .registerCertificate(payloadHash, studentWallet)
+      .registerCertificate(payloadHash, cid, studentWallet)
       .send({ from: issuerWallet });
 
     res.json({
@@ -295,9 +295,10 @@ app.get("/studentCertificates/:walletAddress", async (req, res) => {
 
       const certObj = {
         payloadHash: cert[0],
-        student: cert[1],
-        issuer: cert[2],
-        timestamp: cert[3]
+        cid: cert[1],
+        student: cert[2],
+        issuer: cert[3],
+        timestamp: cert[4]
       };
 
       if (certObj.student.toLowerCase() === walletAddress) {
@@ -320,6 +321,87 @@ app.get("/studentCertificates/:walletAddress", async (req, res) => {
 
     res.status(500).json({
       error: "Failed to fetch certificates"
+    });
+
+  }
+
+});
+
+
+/* =========================
+   Verification Portal Server Handling
+========================= */
+
+app.post("/verifyCertificate", async (req, res) => {
+
+  try {
+
+    const { studentWallet, cid, timestamp } = req.body;
+
+    /* =============================
+       Reconstruct payload hash
+    ============================= */
+
+    const payloadHash = web3.utils.soliditySha3(
+      { type: "address", value: studentWallet },
+      { type: "string", value: cid },
+      { type: "uint256", value: timestamp }
+    );
+
+    /* =============================
+       Query smart contract
+    ============================= */
+
+    const cert = await contract.methods
+      .certificates(payloadHash)
+      .call();
+
+    /* =============================
+       Check if certificate exists
+    ============================= */
+
+    if (cert.issuer === "0x0000000000000000000000000000000000000000") {
+
+      return res.json({
+        valid: false
+      });
+
+    }
+
+    /* =============================
+       Validate fields match
+    ============================= */
+
+    if (
+      cert.student.toLowerCase() !== studentWallet.toLowerCase() ||
+      cert.cid !== cid ||
+      cert.issuedAt.toString() !== timestamp.toString()
+    ) {
+
+      return res.json({
+        valid: false
+      });
+
+    }
+
+    /* =============================
+       Return verification success
+    ============================= */
+
+    res.json({
+      valid: true,
+      student: cert.student,
+      issuer: cert.issuer,
+      timestamp: cert.issuedAt.toString(),
+      cid: cert.cid
+    });
+
+  } catch (error) {
+
+    console.error("Verification error:", error);
+
+    res.status(500).json({
+      valid: false
     });
 
   }

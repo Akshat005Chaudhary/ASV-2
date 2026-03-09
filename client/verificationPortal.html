@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verification Portal</title>
+  </head>
+  <body>
+    <h1>Verify Student Certificate</h1>
+    <p>
+      Enter the student's wallet address, certificate's IPFS hash/CID and Timestamp to
+      verify the certificate.
+    </p>
+    <form>
+      <label for="walletAddress">Student's Wallet Address:</label>
+      <input type="text" id="walletAddress" name="walletAddress" required />
+      <br /><br />
+      <label for="ipfsHash">Certificate's IPFS Hash/CID:</label>
+      <input type="text" id="ipfsHash" name="ipfsHash" required />
+      <br /><br />
+      <label for="timestamp">Certificate's Timestamp:</label>
+      <input type="text" id="timestamp" name="timestamp" required />
+      <br /><br />
+      <button type="button" onclick="verifyCertificate()">Verify</button>
+    </form>
+    <div id="verificationResult"></div>
+    <script src="verificationScript.js"></script>
+  </body>
+</html>

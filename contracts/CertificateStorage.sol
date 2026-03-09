@@ -5,6 +5,7 @@ contract CertificateStorage {
 
     struct Certificate {
         bytes32 payloadHash;
+        string cid;
         address student;
         address issuer;
         uint256 issuedAt;
@@ -20,12 +21,13 @@ contract CertificateStorage {
         isRegisteredUniversity[0xAeB5Dc5d5DbfdF3E9291C942cF4431844d902BeD] = true;
     }
 
-    function registerCertificate(bytes32 payloadHash, address student) public {
+    function registerCertificate(bytes32 payloadHash, string memory cid, address student) public {
 
         require(isRegisteredUniversity[msg.sender], "Not a registered university");
 
         certificates[payloadHash] = Certificate({
             payloadHash: payloadHash,
+            cid: cid,
             student: student,
             issuer: msg.sender,
             issuedAt: block.timestamp
